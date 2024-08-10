@@ -780,6 +780,8 @@ function BotsControl(botsState) {
             gameState.bots[hittedBot].turningLeft = false;
             gameState.bots[hittedBot].turningRight = false;
           }
+          const audio = document.getElementById("monster-player");
+          audio.play();
           break;
         } else if (
           Math.floor(rayPosX) <= 0 || Math.floor(rayPosX) >= SCREEN_WIDTH-1 ||
@@ -797,6 +799,8 @@ function BotsControl(botsState) {
       gameState.player.shooting.animationStartTime = time;
       gameState.player.shooting.keyraised = false;
       gameState.player.shooting.processedHit = false;
+      const audio = document.getElementById("shoot-gun");
+      audio.play();
     }
     if (gameState.player.shooting.animationPlaying) {
       const timeDiff = time-gameState.player.shooting.animationStartTime;
@@ -816,6 +820,9 @@ function BotsControl(botsState) {
         SHOTGUN_SPRITE[2] = 11;
         gameState.player.shooting.animationPlaying = false;
         gameState.player.shooting.animationEndTime = time;
+        const audio = document.getElementById("shoot-gun");
+        audio.pause();
+        audio.currentTime = 0;
       }
     }
 
