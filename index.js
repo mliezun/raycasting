@@ -95,6 +95,9 @@ function drawBuffer(screen_buffer, buffer, lives) {
         case 1:
           color |= 0x300000;
           break;
+        case 0:
+          color |= 0x7F0000;
+          break;
       }
       let base = (x+y*SCREEN_WIDTH)*4;
       screen_buffer[base] = (color & 0xFF0000) >> 16;
@@ -726,6 +729,12 @@ function BotsControl(botsState) {
     ctx.font = "24px bold";
     ctx.fillStyle = "white";
     ctx.fillText(`${Math.floor(1 / frameTime)}`, 15, 35);
+
+    if (lives === 0) {
+      ctx.font = "96px bold";
+      ctx.fillStyle = "white";
+      ctx.fillText(`YOU DIED`, 100, 300);
+    }
 
     //speed modifiers
     let moveSpeed = frameTime * 5.0; //the constant value is in squares/second
