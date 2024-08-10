@@ -196,39 +196,37 @@ function BotsControl(botsState) {
   let posX = 22.5, posY = 11.5; //x and y start position
   let dirX = -1, dirY = 0; //initial direction vector
   let planeX = 0, planeY = 0.66; //the 2d raycaster version of camera plane
+  let lives = 3;
 
   const socket = io.connect()
   let serverSocketId
   let players = []
   
   let botsPos = [
-    [20, 11.5, 16, () => gameState.bots[0]],
+    // [20, 11.5, 16, () => gameState.bots[0]],
   ];
   let botsDir = [
-    [-1, 0]
+    // [-1, 0]
   ]
   
   const ZBuffer = new Float64Array(SCREEN_WIDTH);
   let spriteOrder = new Uint32Array(sprite.length + botsPos.length + players.length);
   let spriteDistance = new Float64Array(sprite.length + botsPos.length + players.length);
 
-  socket.emit('start', { posX, posY, dirX, dirY }, data => {
-    console.log('data', data)
-    serverSocketId = data.serverSocketId
-    players = data.players
+  socket.emit('start', { posX, posY, dirX, dirY, lives }, data => {
+    serverSocketId = data.serverSocketId;
+    players = data.players;
     spriteOrder = new Uint32Array(sprite.length + botsPos.length + players.length);
     spriteDistance = new Float64Array(sprite.length + botsPos.length + players.length);
-  })
+  });
   
   socket.on('player_position_to_client', (data) => {
-    const i = players.findIndex(player => player.serverSocketId === data.serverSocketId)
+    const i = players.findIndex(player => player.serverSocketId === data.serverSocketId);
     
     if (i >= 0) {
-      console.log('player: ', data.serverSocketId)
-      console.log('data: ', data)
-      players[i] = data
+      players[i] = data;
     }
-  })
+  });
   
   let time = 0;
   let oldTime = 0;
@@ -289,13 +287,13 @@ function BotsControl(botsState) {
       },
     },
     bots: [
-      {
-        movingBackward: false,
-        movingForward: false,
-        turningLeft: false,
-        turningRight: false,
-        lives: 3,
-      }
+      // {
+      //   movingBackward: false,
+      //   movingForward: false,
+      //   turningLeft: false,
+      //   turningRight: false,
+      //   lives: 3,
+      // }
     ]
   };
 
@@ -550,7 +548,7 @@ function BotsControl(botsState) {
 
     //SPRITE CASTING
     let spritePlayers = players.map(player => {
-      return [player.posX, player.posY, 16]
+      return [player.posX, player.posY, 16, player.lives]
     });
     let spritesAndBots = [...sprite, ...botsPos, ...spritePlayers];
     //sort sprites from far to close
@@ -617,12 +615,17 @@ function BotsControl(botsState) {
             let texNum = spritesAndBots[spriteOrder[i]][2];
             let color = texture[texNum][TEX_WIDTH * texY + texX]; //get current color from the texture
             //paint pixel if it isn't black, black is the invisible color
-            // //console.log(color);
             if ((color & 0x00FFFFFF) != 0) {
               buffer[y][stripe] = color;
               if (spritesAndBots[spriteOrder[i]].length === 4) {
                 const botState = spritesAndBots[spriteOrder[i]][3];
-                switch (botState().lives) {
+                let other_lives;
+                if (typeof botState === "number") {
+                  other_lives = botState;
+                } else {
+                  other_lives = botState().lives;
+                }
+                switch (other_lives) {
                     case 1:
                       buffer[y][stripe] |= 0x470000;
                       break;
@@ -696,7 +699,6 @@ function BotsControl(botsState) {
           let texNum = SHOTGUN_SPRITE[2];
           let color = texture[texNum][TEX_WIDTH * texY + texX]; //get current color from the texture
           //paint pixel if it isn't black, black is the invisible color
-          // //console.log(color);
           if ((color & 0x00FFFFFF) != 0) {
             buffer[y+80][stripe] = color;
           }
@@ -730,7 +732,7 @@ function BotsControl(botsState) {
         SHOTGUN_SPRITE[1] += dirY * moveSpeed;
       }
 
-      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY, lives })
     }
     //move backwards if no wall behind you
     if (gameState.player.movingBackward) {
@@ -745,7 +747,7 @@ function BotsControl(botsState) {
         SHOTGUN_SPRITE[1] -= dirY * moveSpeed;
       }
 
-      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY, lives })
     }
     //rotate to the right
     if (gameState.player.turningRight) {
@@ -760,7 +762,7 @@ function BotsControl(botsState) {
       SHOTGUN_SPRITE[0] = posX + dirX;
       SHOTGUN_SPRITE[1] = posY + dirY;
 
-      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY, lives })
     }
     //rotate to the left
     if (gameState.player.turningLeft) {
@@ -775,7 +777,7 @@ function BotsControl(botsState) {
       SHOTGUN_SPRITE[0] = posX + dirX;
       SHOTGUN_SPRITE[1] = posY + dirY;
 
-      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY, lives })
     }
 
     const hitSprite = () => {
@@ -811,7 +813,15 @@ function BotsControl(botsState) {
         rayPosX = posX+dirX*raySize;
         rayPosY = posY+dirY*raySize;
         const hittedBot = botsPos.findIndex(p => Math.abs(p[0]-rayPosX)<=hitPrecission && Math.abs(p[1]-rayPosY)<=hitPrecission);
-        if ( 
+        const hittedPlayer = players.findIndex(p => Math.abs(p.posX-rayPosX)<=hitPrecission && Math.abs(p.posY-rayPosY)<=hitPrecission);
+        if (hittedPlayer !== -1) {
+          const pl = players[hittedPlayer];
+          pl.lives--;
+          socket.emit("shoot_other_player", { serverSocketId, player: pl });
+          const audio = document.getElementById("monster-player");
+          audio.play();
+          break;
+        } else if ( 
           hittedBot !== -1
         ) {
           if (--gameState.bots[hittedBot].lives <= 0) {

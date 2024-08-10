@@ -66,7 +66,7 @@ io.sockets.on("connection", function(socket) {
     console.log('Player Conectado: ', socket.id)
 
 	socket.on('start', (data, callback) => {
-        const { posX, posY, dirX, dirY } = data
+        const { posX, posY, dirX, dirY, lives } = data
         const serverSocketId = socket.id
         const players = connections.map(playerSocker => ({
             serverSocketId: playerSocker.id,
@@ -83,16 +83,32 @@ io.sockets.on("connection", function(socket) {
 
         connections.push(socket);
 
-        io.sockets.emit('new_player', { serverSocketId, posX, posY, dirX, dirY })
+        io.sockets.emit('new_player', { serverSocketId, posX, posY, dirX, dirY, lives })
     })
 
     socket.on('player_position_to_server', data => {
-        const { serverSocketId, posX, posY, dirX, dirY } = data
+        const { serverSocketId, posX, posY, dirX, dirY, lives } = data
 
         if (serverSocketId === socket.id) {
             socket.data = data
         }
 
-        io.sockets.emit('player_position_to_client', { serverSocketId, posX, posY, dirX, dirY })
+        if (lives === 0) {
+            io.sockets.emit('player_position_to_client', { serverSocketId, posX: 0, posY: 0, dirX, dirY, lives });
+        } else {
+            io.sockets.emit('player_position_to_client', { serverSocketId, posX, posY, dirX, dirY, lives });
+        }
+    })
+
+    socket.on('shoot_other_player', data => {
+        const { serverSocketId, player } = data;
+
+        if (player.lives === 0) {
+            player.posX = 0;
+            player.posY = 0;
+            io.sockets.emit('player_position_to_client', player);    
+        } else {
+            io.sockets.emit('player_position_to_client', player);
+        }
     })
 })
