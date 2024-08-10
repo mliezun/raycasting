@@ -1,7 +1,9 @@
 "use strict";
 
-const SCREEN_HEIGHT = 480;
 const SCREEN_WIDTH = 640;
+const SCREEN_HEIGHT = 480;
+const TEX_WIDTH = 64;
+const TEX_HEIGHT = 64;
 
 const YELLOW = '#ffff00';
 const RED = '#ff0000';
@@ -11,38 +13,112 @@ const BLACK = '#000000';
 const WHITE = '#ffffff';
 
 const worldMap = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 4, 0, 0, 0, 0, 5, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 4, 0, 4, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 4, 0, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,]
+  [8,8,8,8,8,8,8,8,8,8,8,4,4,6,4,4,6,4,6,4,4,4,6,4],
+  [8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,0,0,0,0,0,0,4],
+  [8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,6],
+  [8,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6],
+  [8,0,3,3,0,0,0,0,0,8,8,4,0,0,0,0,0,0,0,0,0,0,0,4],
+  [8,0,0,0,0,0,0,0,0,0,8,4,0,0,0,0,0,6,6,6,0,6,4,6],
+  [8,8,8,8,0,8,8,8,8,8,8,4,4,4,4,4,4,6,0,0,0,0,0,6],
+  [7,7,7,7,0,7,7,7,7,0,8,0,8,0,8,0,8,4,0,4,0,6,0,6],
+  [7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,0,0,0,0,0,6],
+  [7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,0,0,0,0,4],
+  [7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,6,0,6,0,6,0,6],
+  [7,7,0,0,0,0,0,0,7,8,0,8,0,8,0,8,8,6,4,6,0,6,6,6],
+  [7,7,7,7,0,7,7,7,7,8,8,4,0,6,8,4,8,3,3,3,0,3,3,3],
+  [2,2,2,2,0,2,2,2,2,4,6,4,0,0,6,0,6,3,0,0,0,0,0,3],
+  [2,2,0,0,0,0,0,2,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3],
+  [2,0,0,0,0,0,0,0,2,4,0,0,0,0,0,0,4,3,0,0,0,0,0,3],
+  [1,0,0,0,0,0,0,0,1,4,4,4,4,4,6,0,6,3,3,0,0,0,3,3],
+  [2,0,0,0,0,0,0,0,2,2,2,1,2,2,2,6,6,0,0,5,0,5,0,5],
+  [2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5],
+  [2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5],
+  [2,0,0,0,0,0,0,0,2,0,0,0,0,0,2,5,0,5,0,5,0,5,0,5],
+  [2,2,0,0,0,0,0,2,2,2,0,0,0,2,2,0,5,0,5,0,0,0,5,5],
+  [2,2,2,2,1,2,2,2,2,2,2,1,2,2,2,5,5,5,5,5,5,5,5,5],
 ];
 
-function verLine(ctx, x, y1, y2, color) {
-  ctx.strokeStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(x, y1);
-  ctx.lineTo(x, y2);
-  ctx.stroke();
+
+const sprite = [
+  [20.5, 11.5, 10], //green light in front of playerstart
+  //green lights in every room
+  [18.5,4.5, 10],
+  [10.0,4.5, 10],
+  [10.0,12.5,10],
+  [3.5, 6.5, 10],
+  [3.5, 20.5,10],
+  [3.5, 14.5,10],
+  [14.5,20.5,10],
+
+  //row of pillars in front of wall: fisheye test
+  [18.5, 10.5, 9],
+  [18.5, 11.5, 9],
+  [18.5, 12.5, 9],
+
+  //some barrels around the map
+  [21.5, 1.5, 8],
+  [15.5, 1.5, 8],
+  [16.0, 1.8, 8],
+  [16.2, 1.2, 8],
+  [3.5,  2.5, 8],
+  [9.5, 15.5, 8],
+  [10.0, 15.1,8],
+  [10.5, 15.8,8],
+];
+
+//sort algorithm
+//sort the sprites based on distance
+function sortSprites(order, dist, amount) {
+  let sprites = new Array(amount);
+  for(let i = 0; i < amount; i++) {
+    sprites[i] = [dist[i], order[i]];
+  }
+  sprites.sort((a, b) => a[0]-b[0]);
+  // restore in reverse order to go from farthest to nearest
+  for(let i = 0; i < amount; i++) {
+    dist[i] = sprites[amount - i - 1][0];
+    order[i] = sprites[amount - i - 1][1];
+  }
+}
+
+function drawBuffer(screen_buffer, buffer) {   
+  for (let y = 0; y < SCREEN_HEIGHT; y++) {
+    for (let x = 0; x < SCREEN_WIDTH; x++) {
+      let color = buffer[y][x];
+      let base = (x+y*SCREEN_WIDTH)*4;
+      screen_buffer[base] = (color & 0xFF0000) >> 16;
+      screen_buffer[base + 1] = (color & 0xFF00) >> 8;
+      screen_buffer[base + 2] = color & 0xFF;
+      screen_buffer[base + 3] = 0xFF;
+      buffer[y][x] = 0;
+    }
+  }
+}
+
+function loadImage(imgPath) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const canvas = document.getElementById("image-loader");
+    const ctx = canvas.getContext("2d");
+    img.crossOrigin = "anonymous";
+    img.src = imgPath;
+    img.onload = function() {
+      // Set canvas size to match the image
+      canvas.width = img.width;
+      canvas.height = img.height;
+      // Draw the image on the canvas
+      ctx.drawImage(img, 0, 0);
+      // Get the image data
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      // Convert data to array of RGBA values
+      const rgbaArray = new Uint32Array(imageData.data.length/4);
+      for (let i = 0; i < rgbaArray.length; i++) {
+        rgbaArray[i] = (imageData.data[i*4] << 16) + (imageData.data[i*4+1] << 8) + (imageData.data[i*4+2]);
+      }
+      resolve(rgbaArray);
+    };
+  });
 }
 
 
@@ -54,12 +130,38 @@ function verLine(ctx, x, y1, y2, color) {
   gameCanvas.height = SCREEN_HEIGHT;
 
 
-  let posX = 22, posY = 12; //x and y start position
+  let posX = 22.5, posY = 11.5; //x and y start position
   let dirX = -1, dirY = 0; //initial direction vector
   let planeX = 0, planeY = 0.66; //the 2d raycaster version of camera plane
 
   let time = 0;
   let oldTime = 0;
+
+  const buffer = [];
+  for (let i = 0; i < SCREEN_HEIGHT; i++) {
+    buffer.push(new Uint32Array(SCREEN_WIDTH));
+  }
+
+  const ZBuffer = new Float64Array(SCREEN_WIDTH);
+  const spriteOrder = new Uint32Array(sprite.length);
+  const spriteDistance = new Float64Array(sprite.length);
+
+  const texture = await Promise.all([
+    //load some textures
+    loadImage("pics/eagle.png"),
+    loadImage("pics/redbrick.png"),
+    loadImage("pics/purplestone.png"),
+    loadImage("pics/greystone.png"),
+    loadImage("pics/bluestone.png"),
+    loadImage("pics/mossy.png"),
+    loadImage("pics/wood.png"),
+    loadImage("pics/colorstone.png"),
+
+    //load some sprite textures
+    loadImage("pics/barrel.png"),
+    loadImage("pics/pillar.png"),
+    loadImage("pics/greenlight.png"),
+  ]);
 
   const gameState = {
     player: {
@@ -117,12 +219,69 @@ function verLine(ctx, x, y1, y2, color) {
     }
   });
 
+  const screen = ctx.createImageData(SCREEN_WIDTH, SCREEN_HEIGHT); // only do this once per page
+  const screen_buffer  = screen.data;                        // only do this once per page
+
 
   const drawFrame = (frame) => {
-    ctx.rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-    ctx.fillStyle = BLACK;
-    ctx.fill();
+    //FLOOR CASTING
+    for (let y = 0; y < SCREEN_HEIGHT; y++) {
+      // rayDir for leftmost ray (x = 0) and rightmost ray (x = w)
+      let rayDirX0 = dirX - planeX;
+      let rayDirY0 = dirY - planeY;
+      let rayDirX1 = dirX + planeX;
+      let rayDirY1 = dirY + planeY;
 
+      // Current y position compared to the center of the screen (the horizon)
+      let p = Math.floor(y - SCREEN_HEIGHT / 2);
+
+      // Vertical position of the camera.
+      let posZ = 0.5 * SCREEN_HEIGHT;
+
+      // Horizontal distance from the camera to the floor for the current row.
+      // 0.5 is the z position exactly in the middle between floor and ceiling.
+      let rowDistance = posZ / p;
+
+      // calculate the real world step vector we have to add for each x (parallel to camera plane)
+      // adding step by step avoids multiplications with a weight in the inner loop
+      let floorStepX = rowDistance * (rayDirX1 - rayDirX0) / SCREEN_WIDTH;
+      let floorStepY = rowDistance * (rayDirY1 - rayDirY0) / SCREEN_WIDTH;
+
+      // real world coordinates of the leftmost column. This will be updated as we step to the right.
+      let floorX = posX + rowDistance * rayDirX0;
+      let floorY = posY + rowDistance * rayDirY0;
+
+      for(let x = 0; x < SCREEN_WIDTH; ++x) {
+        // the cell coord is simply got from the integer parts of floorX and floorY
+        let cellX = Math.floor(floorX);
+        let cellY = Math.floor(floorY);
+
+        // get the texture coordinate from the fractional part
+        let tx = Math.floor(TEX_WIDTH * (floorX - cellX)) & (TEX_WIDTH - 1);
+        let ty = Math.floor(TEX_HEIGHT * (floorY - cellY)) & (TEX_HEIGHT - 1);
+
+        floorX += floorStepX;
+        floorY += floorStepY;
+
+        // choose texture and draw the pixel
+        let floorTexture = 3;
+        let ceilingTexture = 6;
+        let color;
+
+        // floor
+        color = texture[floorTexture][TEX_WIDTH * ty + tx];
+        color = (color >> 1) & 8355711; // make a bit darker
+        buffer[y][x] = color;
+
+        //ceiling (symmetrical, at screenHeight - y - 1 instead of y)
+        color = texture[ceilingTexture][TEX_WIDTH * ty + tx];
+        color = (color >> 1) & 8355711; // make a bit darker
+        buffer[SCREEN_HEIGHT - y - 1][x] = color;
+      }
+    }  
+
+
+    //WALL CASTING
     for (let x = 0; x < SCREEN_WIDTH; x++) {
       //calculate ray position and direction
       let cameraX = 2 * x / SCREEN_WIDTH - 1; //x-coordinate in camera space
@@ -214,23 +373,121 @@ function verLine(ctx, x, y1, y2, color) {
         drawEnd = SCREEN_HEIGHT - 1;
       }
 
-      let color = BLACK;
-      switch (worldMap[mapX][mapY]) {
-        case 1: color = RED; break; //red
-        case 2: color = GREEN; break; //green
-        case 3: color = BLUE; break; //blue
-        case 4: color = WHITE; break; //white
-        default: color = YELLOW; break; //yellow
+      //texturing calculations
+      let texNum = worldMap[mapX][mapY] - 1;  //1 subtracted from it so that texture 0 can be used!
+
+      //calculate value of wallX
+      let wallX;  //where exactly the wall was hit
+      if (side === 0) {
+        wallX = posY + perpWallDist * rayDirY;
+      } else {
+        wallX = posX + perpWallDist * rayDirX;
+      }
+      wallX -= Math.floor(wallX);
+
+      //x coordinate on the texture
+      let texX = Math.floor(wallX * TEX_WIDTH);
+      if (side == 0 && rayDirX > 0) {
+        texX = TEX_WIDTH - texX - 1;
+      }
+      if (side == 1 && rayDirY < 0) {
+        texX = TEX_WIDTH - texX - 1;
       }
 
-      //give x and y sides different brightness
-      // if (side == 1) {
-      //   color = DARKER[color];
-      // }
-
-      //draw the pixels of the stripe as a vertical line
-      verLine(ctx, x, drawStart, drawEnd, color);
+      let step = 1.0 * TEX_HEIGHT / lineHeight;
+      // Starting texture coordinate
+      let texPos = (drawStart - SCREEN_HEIGHT / 2 + lineHeight / 2) * step;
+      for (let y = drawStart; y<drawEnd; y++) {
+        // Cast the texture coordinate to integer, and mask with (texHeight - 1) in case of overflow
+        let texY = Math.floor(texPos) & (TEX_HEIGHT - 1);
+        texPos += step;
+        let color = texture[texNum][TEX_HEIGHT * texY + texX];
+        //make color darker for y-sides: R, G and B byte each divided through two with a "shift" and an "and"
+        if (side == 1) {
+          color = (color >> 1) & 8355711;
+        }
+        buffer[y][x] = color;
+      }
+      //SET THE ZBUFFER FOR THE SPRITE CASTING
+      ZBuffer[x] = perpWallDist; //perpendicular distance is used
     }
+
+    //SPRITE CASTING
+    //sort sprites from far to close
+    for (let i = 0; i < sprite.length; i++) {
+      spriteOrder[i] = i;
+      spriteDistance[i] = ((posX - sprite[i][0]) * (posX - sprite[i][0]) + (posY - sprite[i][1]) * (posY - sprite[i][1])); //sqrt not taken, unneeded
+    }
+    sortSprites(spriteOrder, spriteDistance, sprite.length);
+  
+    //after sorting the sprites, do the projection and draw them
+    for (let i = 0; i < sprite.length; i++) {
+      //translate sprite position to relative to camera
+      let spriteX = sprite[spriteOrder[i]][0] - posX;
+      let spriteY = sprite[spriteOrder[i]][1] - posY;
+
+      //transform sprite with the inverse camera matrix
+      // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+      // [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
+      // [ planeY   dirY ]                                          [ -planeY  planeX ]
+
+      let invDet = 1.0 / (planeX * dirY - dirX * planeY); //required for correct matrix multiplication
+
+      let transformX = invDet * (dirY * spriteX - dirX * spriteY);
+      let transformY = invDet * (-planeY * spriteX + planeX * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+
+      let spriteScreenX = Math.floor((SCREEN_WIDTH / 2) * (1 + transformX / transformY));
+
+      //calculate height of the sprite on screen
+      let spriteHeight = Math.abs(Math.floor(SCREEN_HEIGHT / (transformY))); //using 'transformY' instead of the real distance prevents fisheye
+      //calculate lowest and highest pixel to fill in current stripe
+      let drawStartY = Math.floor(-spriteHeight / 2 + SCREEN_HEIGHT / 2);
+      if (drawStartY < 0) {
+        drawStartY = 0;
+      }
+      let drawEndY = Math.floor(spriteHeight / 2 + SCREEN_HEIGHT / 2);
+      if (drawEndY >= SCREEN_HEIGHT) {
+        drawEndY = SCREEN_HEIGHT - 1;
+      }
+
+      //calculate width of the sprite
+      let spriteWidth = Math.abs(Math.floor(SCREEN_HEIGHT / (transformY)));
+      let drawStartX = Math.floor(-spriteWidth / 2 + spriteScreenX);
+      if (drawStartX < 0) {
+        drawStartX = 0;
+      }
+      let drawEndX = Math.floor(spriteWidth / 2 + spriteScreenX);
+      if (drawEndX >= SCREEN_WIDTH) {
+        drawEndX = SCREEN_WIDTH - 1;
+      }
+
+      //loop through every vertical stripe of the sprite on screen
+      for (let stripe = drawStartX; stripe < drawEndX; stripe++) {
+        let texX = Math.floor(Math.floor(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * TEX_WIDTH / spriteWidth) / 256);
+        //the conditions in the if are:
+        //1) it's in front of camera plane so you don't see things behind you
+        //2) it's on the screen (left)
+        //3) it's on the screen (right)
+        //4) ZBuffer, with perpendicular distance
+        if (transformY > 0 && stripe > 0 && stripe < SCREEN_WIDTH && transformY < ZBuffer[stripe]) {
+          //for every pixel of the current stripe 
+          for (let y = drawStartY; y < drawEndY; y++) {
+            let d = Math.floor((y) * 256 - SCREEN_HEIGHT * 128 + spriteHeight * 128); //256 and 128 factors to avoid floats
+            let texY = Math.floor(((d * TEX_HEIGHT) / spriteHeight) / 256);
+            let texNum = sprite[spriteOrder[i]][2];
+            let color = texture[texNum][TEX_WIDTH * texY + texX]; //get current color from the texture
+            //paint pixel if it isn't black, black is the invisible color
+            // console.log(color);
+            if ((color & 0x00FFFFFF) != 0) {
+              buffer[y][stripe] = color;
+            }
+          }
+        }
+      }
+    }
+
+    drawBuffer(screen_buffer, buffer);
+    ctx.putImageData(screen, 0, 0);
 
     //timing for input and FPS counter
     oldTime = time;
