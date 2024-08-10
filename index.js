@@ -123,6 +123,63 @@ function loadImage(imgPath) {
   });
 }
 
+function MoveBots(botsPosition, botsDirection, botsState, frameTime) {
+  for (let index = 0; index < botsState.length; index++) {
+    const state = botsState[index]
+    const pos = botsPosition[index]
+    const dir = botsDirection[index]
+    //speed modifiers
+    let moveSpeed = frameTime * 5.0; //the constant value is in squares/second
+    let rotSpeed = frameTime * 3.0; //the constant value is in radians/second
+    if (state.movingForward) {
+      if (worldMap[Math.floor(pos[0] + dir[0] * moveSpeed)][Math.floor(pos[1])] == false) {
+        pos[0] += dir[0] * moveSpeed;
+      }
+      if (worldMap[Math.floor(pos[0])][Math.floor(pos[1] + dir[0] * moveSpeed)] == false) {
+        pos[1] += dir[0] * moveSpeed;
+      }
+    }
+    //move backwards if no wall behind you
+    if (state.movingBackward) {
+      if (worldMap[Math.floor(pos[0] - dir[0] * moveSpeed)][Math.floor(pos[1])] == false) pos[0] -= dir[0] * moveSpeed;
+      if (worldMap[Math.floor(pos[0])][Math.floor(pos[1] - dir[1] * moveSpeed)] == false) pos[1] -= dir[1] * moveSpeed;
+    }
+    //rotate to the right
+    if (state.turningRight) {
+      //both camera direction and camera plane must be rotated
+      let oldDirX = dir[0];
+      dir[0] = dir[0] * Math.cos(-rotSpeed) - dir[1] * Math.sin(-rotSpeed);
+      dir[1] = oldDirX * Math.sin(-rotSpeed) + dir[1] * Math.cos(-rotSpeed);
+    }
+    //rotate to the left
+    if (state.turningLeft) {
+      //both camera direction and camera plane must be rotated
+      let oldDirX = dir[0];
+      dir[0] = dir[0] * Math.cos(rotSpeed) - dir[1] * Math.sin(rotSpeed);
+      dir[1] = oldDirX * Math.sin(rotSpeed) + dir[1] * Math.cos(rotSpeed);
+    }
+    botsPosition[index] = pos
+    botsDirection[index] = dir
+  }
+}
+
+let oldBotTime = window.performance.now();
+
+function BotsControl(botsState) {
+  const currentBotTime = window.performance.now();
+  if (currentBotTime - oldBotTime > 500) {
+    oldBotTime = currentBotTime
+    const max = 10
+    const min = 0
+    for (let index = 0; index < botsState.length; index++) {
+      botsState[index].movingForward = Math.floor(Math.random() * (max - min + 1) + min) > 5
+      botsState[index].movingBackward = Math.floor(Math.random() * (max - min + 1) + min) > 5
+      botsState[index].turningLeft = Math.floor(Math.random() * (max - min + 1) + min) > 5
+      botsState[index].turningRight = Math.floor(Math.random() * (max - min + 1) + min) > 5
+    }
+  }
+}
+
 
 (async () => {
   const gameCanvas = document.getElementById("game");
@@ -139,14 +196,21 @@ function loadImage(imgPath) {
   let time = 0;
   let oldTime = 0;
 
+  let botsPos = [
+    [20, 11.5, 16],
+  ];
+  let botsDir = [
+    [-1, 0]
+  ]
+
   const buffer = [];
   for (let i = 0; i < SCREEN_HEIGHT; i++) {
     buffer.push(new Uint32Array(SCREEN_WIDTH));
   }
 
   const ZBuffer = new Float64Array(SCREEN_WIDTH);
-  const spriteOrder = new Uint32Array(sprite.length);
-  const spriteDistance = new Float64Array(sprite.length);
+  const spriteOrder = new Uint32Array(sprite.length + botsPos.length);
+  const spriteDistance = new Float64Array(sprite.length + botsPos.length);
 
   const texture = await Promise.all([
     //load some textures
@@ -168,6 +232,8 @@ function loadImage(imgPath) {
     loadImage("pics/handshotgun3.gif"),
     loadImage("pics/handshotgun4.gif"),
     loadImage("pics/handshotgun5.gif"),
+    // load bot sprites
+    loadImage("pics/bot1.png"),
   ]);
 
   const gameState = {
@@ -183,7 +249,15 @@ function loadImage(imgPath) {
         animationStartTime: 0,
         animationEndTime: 0,
       },
-    }
+    },
+    bots: [
+      {
+        movingBackward: false,
+        movingForward: false,
+        turningLeft: false,
+        turningRight: false,
+      }
+    ]
   };
 
   window.addEventListener("keydown", (e) => {
@@ -432,18 +506,23 @@ function loadImage(imgPath) {
     }
 
     //SPRITE CASTING
+    let spritesAndBots = [...sprite, ...botsPos]
+    console.log('spritesAndBots: ', spritesAndBots)
     //sort sprites from far to close
-    for (let i = 0; i < sprite.length; i++) {
+    for (let i = 0; i < spritesAndBots.length; i++) {
       spriteOrder[i] = i;
-      spriteDistance[i] = ((posX - sprite[i][0]) * (posX - sprite[i][0]) + (posY - sprite[i][1]) * (posY - sprite[i][1])); //sqrt not taken, unneeded
+      spriteDistance[i] = ((posX - spritesAndBots[i][0]) * (posX - spritesAndBots[i][0]) + (posY - spritesAndBots[i][1]) * (posY - spritesAndBots[i][1])); //sqrt not taken, unneeded
     }
-    sortSprites(spriteOrder, spriteDistance, sprite.length);
+    sortSprites(spriteOrder, spriteDistance, spritesAndBots.length);
+    console.log('spriteOrder: ', spriteOrder)
+    console.log('spriteDistance: ', spriteDistance)
   
     //after sorting the sprites, do the projection and draw them
-    for (let i = 0; i < sprite.length; i++) {
+    for (let i = 0; i < spritesAndBots.length; i++) {
       //translate sprite position to relative to camera
-      let spriteX = sprite[spriteOrder[i]][0] - posX;
-      let spriteY = sprite[spriteOrder[i]][1] - posY;
+      console.log('i: ', i)
+      let spriteX = spritesAndBots[spriteOrder[i]][0] - posX;
+      let spriteY = spritesAndBots[spriteOrder[i]][1] - posY;
 
       //transform sprite with the inverse camera matrix
       // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
@@ -493,7 +572,7 @@ function loadImage(imgPath) {
           for (let y = drawStartY; y < drawEndY; y++) {
             let d = Math.floor((y) * 256 - SCREEN_HEIGHT * 128 + spriteHeight * 128); //256 and 128 factors to avoid floats
             let texY = Math.floor(((d * TEX_HEIGHT) / spriteHeight) / 256);
-            let texNum = sprite[spriteOrder[i]][2];
+            let texNum = spritesAndBots[spriteOrder[i]][2];
             let color = texture[texNum][TEX_WIDTH * texY + texX]; //get current color from the texture
             //paint pixel if it isn't black, black is the invisible color
             // console.log(color);
@@ -654,6 +733,9 @@ function loadImage(imgPath) {
         gameState.player.shooting.animationEndTime = time;
       } 
     }
+
+    BotsControl(gameState.bots)
+    MoveBots(botsPos, botsDir, gameState.bots, frameTime)
 
     window.requestAnimationFrame(drawFrame);
   };
