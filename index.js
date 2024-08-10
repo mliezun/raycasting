@@ -225,6 +225,8 @@ function BotsControl(botsState) {
     
     if (i >= 0) {
       players[i] = data;
+    } else if (data.serverSocketId === serverSocketId) {
+      lives = data.lives;
     }
   });
   
@@ -882,7 +884,9 @@ function BotsControl(botsState) {
     BotsControl(gameState.bots)
     MoveBots(botsPos, botsDir, gameState.bots, frameTime)
 
-    if (!gameState.player.pause) window.requestAnimationFrame(drawFrame);
+    if (!gameState.player.pause && lives > 0) {
+      window.requestAnimationFrame(drawFrame);
+    }
   };
 
   window.requestAnimationFrame(drawFrame);
