@@ -197,7 +197,7 @@ function BotsControl(botsState) {
   let oldTime = 0;
 
   let botsPos = [
-    [20, 11.5, 16],
+    [20, 11.5, 16, () => gameState.bots[0]],
   ];
   let botsDir = [
     [-1, 0]
@@ -257,6 +257,7 @@ function BotsControl(botsState) {
         movingForward: false,
         turningLeft: false,
         turningRight: false,
+        lives: 3,
       }
     ]
   };
@@ -579,6 +580,19 @@ function BotsControl(botsState) {
             // console.log(color);
             if ((color & 0x00FFFFFF) != 0) {
               buffer[y][stripe] = color;
+              if (spritesAndBots[spriteOrder[i]].length === 4) {
+                const botState = spritesAndBots[spriteOrder[i]][3];
+                switch (botState().lives) {
+                    case 1:
+                      buffer[y][stripe] |= 0x470000;
+                      break;
+                    case 2:
+                      buffer[y][stripe] |= 0x300000;
+                      break;
+                    default:
+                      break;
+                }
+              }
             }
           }
         }
@@ -748,9 +762,15 @@ function BotsControl(botsState) {
         if ( 
           hittedBot !== -1
         ) {
-          botsPos[hittedBot][0] = 0;
-          botsPos[hittedBot][1] = 0;
-          botsDir[hittedBot] = [0, 0];
+          if (--gameState.bots[hittedBot].lives <= 0) {
+            botsPos[hittedBot][0] = 0;
+            botsPos[hittedBot][1] = 0;
+            botsDir[hittedBot] = [0, 0];
+            gameState.bots[hittedBot].movingBackward = false;
+            gameState.bots[hittedBot].movingForward = false;
+            gameState.bots[hittedBot].turningLeft = false;
+            gameState.bots[hittedBot].turningRight = false;
+          }
           break;
         } else if (
           Math.floor(rayPosX) <= 0 || Math.floor(rayPosX) >= SCREEN_WIDTH-1 ||
