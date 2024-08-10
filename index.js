@@ -67,6 +67,8 @@ const sprite = [
   [10.5, 15.8,8],
 ];
 
+const SHOTGUN_SPRITE = [21.5, 11.5, 11];
+
 //sort algorithm
 //sort the sprites based on distance
 function sortSprites(order, dist, amount) {
@@ -161,6 +163,7 @@ function loadImage(imgPath) {
     loadImage("pics/barrel.png"),
     loadImage("pics/pillar.png"),
     loadImage("pics/greenlight.png"),
+    loadImage("pics/handshotgun1.gif"),
   ]);
 
   const gameState = {
@@ -486,6 +489,71 @@ function loadImage(imgPath) {
       }
     }
 
+    // SHOTGUN SPRITE RENDERING
+    {
+      //translate sprite position to relative to camera
+      let spriteX = SHOTGUN_SPRITE[0] - posX;
+      let spriteY = SHOTGUN_SPRITE[1] - posY;
+
+      //transform sprite with the inverse camera matrix
+      // [ planeX   dirX ] -1                                       [ dirY      -dirX ]
+      // [               ]       =  1/(planeX*dirY-dirX*planeY) *   [                 ]
+      // [ planeY   dirY ]                                          [ -planeY  planeX ]
+
+      let invDet = 1.0 / (planeX * dirY - dirX * planeY); //required for correct matrix multiplication
+
+      let transformX = invDet * (dirY * spriteX - dirX * spriteY);
+      let transformY = invDet * (-planeY * spriteX + planeX * spriteY); //this is actually the depth inside the screen, that what Z is in 3D
+
+      let spriteScreenX = Math.floor((SCREEN_WIDTH / 2) * (1 + transformX / transformY));
+
+      const scaleDown = 1.5;
+
+      //calculate height of the sprite on screen
+      let spriteHeight = Math.abs(Math.floor(SCREEN_HEIGHT / (transformY) / scaleDown)); //using 'transformY' instead of the real distance prevents fisheye
+      //calculate lowest and highest pixel to fill in current stripe
+      let drawStartY = Math.floor(-spriteHeight / 2 + SCREEN_HEIGHT / 2);
+      if (drawStartY < 0) {
+        drawStartY = 0;
+      }
+      let drawEndY = Math.floor(spriteHeight / 2 + SCREEN_HEIGHT / 2);
+      if (drawEndY >= SCREEN_HEIGHT) {
+        drawEndY = SCREEN_HEIGHT - 1;
+      }
+
+      //calculate width of the sprite
+      let spriteWidth = Math.abs(Math.floor(SCREEN_HEIGHT / (transformY) / scaleDown));
+      let drawStartX = Math.floor(-spriteWidth / 2 + spriteScreenX);
+      if (drawStartX < 0) {
+        drawStartX = 0;
+      }
+      let drawEndX = Math.floor(spriteWidth / 2 + spriteScreenX);
+      if (drawEndX >= SCREEN_WIDTH) {
+        drawEndX = SCREEN_WIDTH - 1;
+      }
+
+      //loop through every vertical stripe of the sprite on screen
+      for (let stripe = drawStartX; stripe < drawEndX; stripe++) {
+        let texX = Math.floor(Math.floor(256 * (stripe - (-spriteWidth / 2 + spriteScreenX)) * TEX_WIDTH / spriteWidth) / 256);
+        //the conditions in the if are:
+        //1) it's in front of camera plane so you don't see things behind you
+        //2) it's on the screen (left)
+        //3) it's on the screen (right)
+        //4) ZBuffer, with perpendicular distance
+        for (let y = drawStartY; y < drawEndY; y++) {
+          let d = Math.floor((y) * 256 - SCREEN_HEIGHT * 128 + spriteHeight * 128); //256 and 128 factors to avoid floats
+          let texY = Math.floor(((d * TEX_HEIGHT) / spriteHeight) / 256);
+          let texNum = SHOTGUN_SPRITE[2];
+          let color = texture[texNum][TEX_WIDTH * texY + texX]; //get current color from the texture
+          //paint pixel if it isn't black, black is the invisible color
+          // console.log(color);
+          if ((color & 0x00FFFFFF) != 0) {
+            buffer[y+80][stripe] = color;
+          }
+        }
+      }
+    }
+
     drawBuffer(screen_buffer, buffer);
     ctx.putImageData(screen, 0, 0);
 
@@ -503,15 +571,23 @@ function loadImage(imgPath) {
     if (gameState.player.movingForward) {
       if (worldMap[Math.floor(posX + dirX * moveSpeed)][Math.floor(posY)] == false) {
         posX += dirX * moveSpeed;
+        SHOTGUN_SPRITE[0] += dirX * moveSpeed;
       }
       if (worldMap[Math.floor(posX)][Math.floor(posY + dirY * moveSpeed)] == false) {
         posY += dirY * moveSpeed;
+        SHOTGUN_SPRITE[1] += dirY * moveSpeed;
       }
     }
     //move backwards if no wall behind you
     if (gameState.player.movingBackward) {
-      if (worldMap[Math.floor(posX - dirX * moveSpeed)][Math.floor(posY)] == false) posX -= dirX * moveSpeed;
-      if (worldMap[Math.floor(posX)][Math.floor(posY - dirY * moveSpeed)] == false) posY -= dirY * moveSpeed;
+      if (worldMap[Math.floor(posX - dirX * moveSpeed)][Math.floor(posY)] == false) {
+        posX -= dirX * moveSpeed;
+        SHOTGUN_SPRITE[0] -= dirX * moveSpeed;
+      }
+      if (worldMap[Math.floor(posX)][Math.floor(posY - dirY * moveSpeed)] == false) {
+        posY -= dirY * moveSpeed;
+        SHOTGUN_SPRITE[1] -= dirY * moveSpeed;
+      }
     }
     //rotate to the right
     if (gameState.player.turningRight) {
@@ -522,6 +598,9 @@ function loadImage(imgPath) {
       let oldPlaneX = planeX;
       planeX = planeX * Math.cos(-rotSpeed) - planeY * Math.sin(-rotSpeed);
       planeY = oldPlaneX * Math.sin(-rotSpeed) + planeY * Math.cos(-rotSpeed);
+
+      SHOTGUN_SPRITE[0] = posX + dirX;
+      SHOTGUN_SPRITE[1] = posY + dirY;
     }
     //rotate to the left
     if (gameState.player.turningLeft) {
@@ -532,6 +611,9 @@ function loadImage(imgPath) {
       let oldPlaneX = planeX;
       planeX = planeX * Math.cos(rotSpeed) - planeY * Math.sin(rotSpeed);
       planeY = oldPlaneX * Math.sin(rotSpeed) + planeY * Math.cos(rotSpeed);
+
+      SHOTGUN_SPRITE[0] = posX + dirX;
+      SHOTGUN_SPRITE[1] = posY + dirY;
     }
 
     window.requestAnimationFrame(drawFrame);
