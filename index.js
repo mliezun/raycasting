@@ -84,10 +84,18 @@ function sortSprites(order, dist, amount) {
   }
 }
 
-function drawBuffer(screen_buffer, buffer) {   
+function drawBuffer(screen_buffer, buffer, lives) {   
   for (let y = 0; y < SCREEN_HEIGHT; y++) {
     for (let x = 0; x < SCREEN_WIDTH; x++) {
       let color = buffer[y][x];
+      switch (lives) {
+        case 2:
+          color |= 0x470000;
+          break;
+        case 1:
+          color |= 0x300000;
+          break;
+      }
       let base = (x+y*SCREEN_WIDTH)*4;
       screen_buffer[base] = (color & 0xFF0000) >> 16;
       screen_buffer[base + 1] = (color & 0xFF00) >> 8;
@@ -708,7 +716,7 @@ function BotsControl(botsState) {
       }
     }
 
-    drawBuffer(screen_buffer, buffer);
+    drawBuffer(screen_buffer, buffer, lives);
     ctx.putImageData(screen, 0, 0);
 
     //timing for input and FPS counter
