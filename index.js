@@ -132,17 +132,21 @@ function MoveBots(botsPosition, botsDirection, botsState, frameTime) {
     let moveSpeed = frameTime * 5.0; //the constant value is in squares/second
     let rotSpeed = frameTime * 3.0; //the constant value is in radians/second
     if (state.movingForward) {
-      if (worldMap[Math.floor(pos[0] + dir[0] * moveSpeed)][Math.floor(pos[1])] == false) {
+      const moveX = Math.floor(pos[0] + dir[0] * moveSpeed)
+      if (moveX >= 0 && moveX < worldMap.length && worldMap[moveX][Math.floor(pos[1])] == false) {
         pos[0] += dir[0] * moveSpeed;
       }
-      if (worldMap[Math.floor(pos[0])][Math.floor(pos[1] + dir[0] * moveSpeed)] == false) {
+      const moveY = Math.floor(pos[1] + dir[0] * moveSpeed)
+      if (moveY >= 0 && moveY < worldMap[Math.floor(pos[0])].length && worldMap[Math.floor(pos[0])][moveY] == false) {
         pos[1] += dir[0] * moveSpeed;
       }
     }
     //move backwards if no wall behind you
     if (state.movingBackward) {
-      if (worldMap[Math.floor(pos[0] - dir[0] * moveSpeed)][Math.floor(pos[1])] == false) pos[0] -= dir[0] * moveSpeed;
-      if (worldMap[Math.floor(pos[0])][Math.floor(pos[1] - dir[1] * moveSpeed)] == false) pos[1] -= dir[1] * moveSpeed;
+      const moveX = Math.floor(pos[0] - dir[0] * moveSpeed)
+      if (moveX >= 0 && moveX < worldMap.length && worldMap[moveX][Math.floor(pos[1])] == false) pos[0] -= dir[0] * moveSpeed;
+      const moveY = Math.floor(pos[1] - dir[1] * moveSpeed)
+      if (moveY >= 0 && moveY < worldMap[Math.floor(pos[0])].length && worldMap[Math.floor(pos[0])][moveY] == false) pos[1] -= dir[1] * moveSpeed;
     }
     //rotate to the right
     if (state.turningRight) {
@@ -238,6 +242,7 @@ function BotsControl(botsState) {
 
   const gameState = {
     player: {
+      pause: false,
       movingBackward: false,
       movingForward: false,
       turningLeft: false,
@@ -265,6 +270,10 @@ function BotsControl(botsState) {
   window.addEventListener("keydown", (e) => {
     if (!e.repeat) {
       switch (e.code) {
+        case 'Escape':
+          gameState.player.pause = !gameState.player.pause;
+          if (!gameState.player.pause) window.requestAnimationFrame(drawFrame);
+          break;
         case 'ArrowUp':
         case 'KeyW':
           gameState.player.movingForward = true;
@@ -373,7 +382,7 @@ function BotsControl(botsState) {
         color = (color >> 1) & 8355711; // make a bit darker
         buffer[SCREEN_HEIGHT - y - 1][x] = color;
       }
-    }  
+    }
 
 
     //WALL CASTING
@@ -509,20 +518,16 @@ function BotsControl(botsState) {
 
     //SPRITE CASTING
     let spritesAndBots = [...sprite, ...botsPos]
-    // console.log('spritesAndBots: ', spritesAndBots)
     //sort sprites from far to close
     for (let i = 0; i < spritesAndBots.length; i++) {
       spriteOrder[i] = i;
       spriteDistance[i] = ((posX - spritesAndBots[i][0]) * (posX - spritesAndBots[i][0]) + (posY - spritesAndBots[i][1]) * (posY - spritesAndBots[i][1])); //sqrt not taken, unneeded
     }
     sortSprites(spriteOrder, spriteDistance, spritesAndBots.length);
-    // console.log('spriteOrder: ', spriteOrder)
-    // console.log('spriteDistance: ', spriteDistance)
   
     //after sorting the sprites, do the projection and draw them
     for (let i = 0; i < spritesAndBots.length; i++) {
       //translate sprite position to relative to camera
-      // console.log('i: ', i)
       let spriteX = spritesAndBots[spriteOrder[i]][0] - posX;
       let spriteY = spritesAndBots[spriteOrder[i]][1] - posY;
 
@@ -679,22 +684,26 @@ function BotsControl(botsState) {
     let moveSpeed = frameTime * 5.0; //the constant value is in squares/second
     let rotSpeed = frameTime * 3.0; //the constant value is in radians/second
     if (gameState.player.movingForward) {
-      if (worldMap[Math.floor(posX + dirX * moveSpeed)][Math.floor(posY)] == false) {
+      const moveX = Math.floor(posX + dirX * moveSpeed)
+      if (moveX >= 0 && moveX < worldMap.length && worldMap[moveX][Math.floor(posY)] == false) {
         posX += dirX * moveSpeed;
         SHOTGUN_SPRITE[0] += dirX * moveSpeed;
       }
-      if (worldMap[Math.floor(posX)][Math.floor(posY + dirY * moveSpeed)] == false) {
+      const moveY = Math.floor(posY + dirY * moveSpeed)
+      if (moveY >= 0 && moveY < worldMap[Math.floor(posX)].length && worldMap[Math.floor(posX)][moveY] == false) {
         posY += dirY * moveSpeed;
         SHOTGUN_SPRITE[1] += dirY * moveSpeed;
       }
     }
     //move backwards if no wall behind you
     if (gameState.player.movingBackward) {
-      if (worldMap[Math.floor(posX - dirX * moveSpeed)][Math.floor(posY)] == false) {
+      const moveX = Math.floor(posX - dirX * moveSpeed)
+      if (moveX >= 0 && moveX < worldMap.length && worldMap[moveX][Math.floor(posY)] == false) {
         posX -= dirX * moveSpeed;
         SHOTGUN_SPRITE[0] -= dirX * moveSpeed;
       }
-      if (worldMap[Math.floor(posX)][Math.floor(posY - dirY * moveSpeed)] == false) {
+      const moveY = Math.floor(posY - dirY * moveSpeed)
+      if (moveY >= 0 && moveY < worldMap[Math.floor(posX)].length && worldMap[Math.floor(posX)][moveY] == false) {
         posY -= dirY * moveSpeed;
         SHOTGUN_SPRITE[1] -= dirY * moveSpeed;
       }
@@ -807,13 +816,13 @@ function BotsControl(botsState) {
         SHOTGUN_SPRITE[2] = 11;
         gameState.player.shooting.animationPlaying = false;
         gameState.player.shooting.animationEndTime = time;
-      } 
+      }
     }
 
     BotsControl(gameState.bots)
     MoveBots(botsPos, botsDir, gameState.bots, frameTime)
 
-    window.requestAnimationFrame(drawFrame);
+    if (!gameState.player.pause) window.requestAnimationFrame(drawFrame);
   };
 
   window.requestAnimationFrame(drawFrame);
