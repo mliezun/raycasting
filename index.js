@@ -197,25 +197,57 @@ function BotsControl(botsState) {
   let dirX = -1, dirY = 0; //initial direction vector
   let planeX = 0, planeY = 0.66; //the 2d raycaster version of camera plane
 
-  let time = 0;
-  let oldTime = 0;
-
+  const socket = io.connect()
+  let serverSocketId
+  let players = []
+  
   let botsPos = [
     [20, 11.5, 16, () => gameState.bots[0]],
   ];
   let botsDir = [
     [-1, 0]
   ]
+  
+  const ZBuffer = new Float64Array(SCREEN_WIDTH);
+  let spriteOrder = new Uint32Array(sprite.length + botsPos.length + players.length);
+  let spriteDistance = new Float64Array(sprite.length + botsPos.length + players.length);
 
+  socket.emit('start', { posX, posY, dirX, dirY }, data => {
+    console.log('data', data)
+    serverSocketId = data.serverSocketId
+    players = data.players
+    spriteOrder = new Uint32Array(sprite.length + botsPos.length + players.length);
+    spriteDistance = new Float64Array(sprite.length + botsPos.length + players.length);
+  })
+  
+  socket.on('player_position_to_client', (data) => {
+    const i = players.findIndex(player => player.serverSocketId === data.serverSocketId)
+    
+    if (i >= 0) {
+      console.log('player: ', data.serverSocketId)
+      console.log('data: ', data)
+      players[i] = data
+    }
+  })
+  
+  let time = 0;
+  let oldTime = 0;
+  
   const buffer = [];
   for (let i = 0; i < SCREEN_HEIGHT; i++) {
     buffer.push(new Uint32Array(SCREEN_WIDTH));
   }
 
-  const ZBuffer = new Float64Array(SCREEN_WIDTH);
-  const spriteOrder = new Uint32Array(sprite.length + botsPos.length);
-  const spriteDistance = new Float64Array(sprite.length + botsPos.length);
-
+  socket.on('new_player', (data) => {
+    const itsAMeMario = serverSocketId === data.serverSocketId
+    
+    if (!itsAMeMario) {
+      players.push(data)
+      spriteOrder = new Uint32Array(sprite.length + botsPos.length + players.length);
+      spriteDistance = new Float64Array(sprite.length + botsPos.length + players.length);
+    }
+  })
+  
   const texture = await Promise.all([
     //load some textures
     loadImage("pics/eagle.png"),
@@ -517,7 +549,10 @@ function BotsControl(botsState) {
     }
 
     //SPRITE CASTING
-    let spritesAndBots = [...sprite, ...botsPos]
+    let spritePlayers = players.map(player => {
+      return [player.posX, player.posY, 16]
+    });
+    let spritesAndBots = [...sprite, ...botsPos, ...spritePlayers];
     //sort sprites from far to close
     for (let i = 0; i < spritesAndBots.length; i++) {
       spriteOrder[i] = i;
@@ -582,7 +617,7 @@ function BotsControl(botsState) {
             let texNum = spritesAndBots[spriteOrder[i]][2];
             let color = texture[texNum][TEX_WIDTH * texY + texX]; //get current color from the texture
             //paint pixel if it isn't black, black is the invisible color
-            // console.log(color);
+            // //console.log(color);
             if ((color & 0x00FFFFFF) != 0) {
               buffer[y][stripe] = color;
               if (spritesAndBots[spriteOrder[i]].length === 4) {
@@ -661,7 +696,7 @@ function BotsControl(botsState) {
           let texNum = SHOTGUN_SPRITE[2];
           let color = texture[texNum][TEX_WIDTH * texY + texX]; //get current color from the texture
           //paint pixel if it isn't black, black is the invisible color
-          // console.log(color);
+          // //console.log(color);
           if ((color & 0x00FFFFFF) != 0) {
             buffer[y+80][stripe] = color;
           }
@@ -694,6 +729,8 @@ function BotsControl(botsState) {
         posY += dirY * moveSpeed;
         SHOTGUN_SPRITE[1] += dirY * moveSpeed;
       }
+
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
     }
     //move backwards if no wall behind you
     if (gameState.player.movingBackward) {
@@ -707,6 +744,8 @@ function BotsControl(botsState) {
         posY -= dirY * moveSpeed;
         SHOTGUN_SPRITE[1] -= dirY * moveSpeed;
       }
+
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
     }
     //rotate to the right
     if (gameState.player.turningRight) {
@@ -720,6 +759,8 @@ function BotsControl(botsState) {
 
       SHOTGUN_SPRITE[0] = posX + dirX;
       SHOTGUN_SPRITE[1] = posY + dirY;
+
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
     }
     //rotate to the left
     if (gameState.player.turningLeft) {
@@ -733,6 +774,8 @@ function BotsControl(botsState) {
 
       SHOTGUN_SPRITE[0] = posX + dirX;
       SHOTGUN_SPRITE[1] = posY + dirY;
+
+      socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY})
     }
 
     const hitSprite = () => {
