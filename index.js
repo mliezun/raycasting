@@ -248,6 +248,7 @@ function BotsControl(botsState) {
         animationPlaying: false,
         animationStartTime: 0,
         animationEndTime: 0,
+        processedHit: false,
       },
     },
     bots: [
@@ -507,20 +508,20 @@ function BotsControl(botsState) {
 
     //SPRITE CASTING
     let spritesAndBots = [...sprite, ...botsPos]
-    console.log('spritesAndBots: ', spritesAndBots)
+    // console.log('spritesAndBots: ', spritesAndBots)
     //sort sprites from far to close
     for (let i = 0; i < spritesAndBots.length; i++) {
       spriteOrder[i] = i;
       spriteDistance[i] = ((posX - spritesAndBots[i][0]) * (posX - spritesAndBots[i][0]) + (posY - spritesAndBots[i][1]) * (posY - spritesAndBots[i][1])); //sqrt not taken, unneeded
     }
     sortSprites(spriteOrder, spriteDistance, spritesAndBots.length);
-    console.log('spriteOrder: ', spriteOrder)
-    console.log('spriteDistance: ', spriteDistance)
+    // console.log('spriteOrder: ', spriteOrder)
+    // console.log('spriteDistance: ', spriteDistance)
   
     //after sorting the sprites, do the projection and draw them
     for (let i = 0; i < spritesAndBots.length; i++) {
       //translate sprite position to relative to camera
-      console.log('i: ', i)
+      // console.log('i: ', i)
       let spriteX = spritesAndBots[spriteOrder[i]][0] - posX;
       let spriteY = spritesAndBots[spriteOrder[i]][1] - posY;
 
@@ -711,11 +712,62 @@ function BotsControl(botsState) {
       SHOTGUN_SPRITE[1] = posY + dirY;
     }
 
+    const hitSprite = () => {
+      let raySize = 0.01;
+      let rayPosX, rayPosY;
+      const increment = raySize;
+      while (raySize < Math.max(worldMap.length, worldMap[0].length)) {
+        rayPosX = posX+dirX*raySize;
+        rayPosY = posY+dirY*raySize;
+        const hittedSprite = sprite.find(s => Math.abs(s[0]-rayPosX)<=0.2 && Math.abs(s[1]-rayPosY)<=0.2);
+        if ( 
+          hittedSprite
+        ) {
+          hittedSprite[0] = 0;
+          hittedSprite[1] = 0;
+          break;
+        } else if (
+          Math.floor(rayPosX) <= 0 || Math.floor(rayPosX) >= SCREEN_WIDTH-1 ||
+          Math.floor(rayPosY) <= 0 || Math.floor(rayPosY) >= SCREEN_HEIGHT-1
+        ) {
+          break;
+        }
+        raySize += increment;
+      }
+    }
+
+    const hitPlayer = () => {
+      let raySize = 0.01;
+      let rayPosX, rayPosY;
+      const increment = raySize;
+      const hitPrecission = 0.2;
+      while (raySize < Math.max(worldMap.length, worldMap[0].length)) {
+        rayPosX = posX+dirX*raySize;
+        rayPosY = posY+dirY*raySize;
+        const hittedBot = botsPos.findIndex(p => Math.abs(p[0]-rayPosX)<=hitPrecission && Math.abs(p[1]-rayPosY)<=hitPrecission);
+        if ( 
+          hittedBot !== -1
+        ) {
+          botsPos[hittedBot][0] = 0;
+          botsPos[hittedBot][1] = 0;
+          botsDir[hittedBot] = [0, 0];
+          break;
+        } else if (
+          Math.floor(rayPosX) <= 0 || Math.floor(rayPosX) >= SCREEN_WIDTH-1 ||
+          Math.floor(rayPosY) <= 0 || Math.floor(rayPosY) >= SCREEN_HEIGHT-1
+        ) {
+          break;
+        }
+        raySize += increment;
+      }
+    }
+
     //show shooting animation
     if (gameState.player.shooting.keypressed && gameState.player.shooting.keyraised && !gameState.player.shooting.animationPlaying) {
       gameState.player.shooting.animationPlaying = true;
       gameState.player.shooting.animationStartTime = time;
       gameState.player.shooting.keyraised = false;
+      gameState.player.shooting.processedHit = false;
     }
     if (gameState.player.shooting.animationPlaying) {
       const timeDiff = time-gameState.player.shooting.animationStartTime;
@@ -723,6 +775,10 @@ function BotsControl(botsState) {
         SHOTGUN_SPRITE[2] = 12;
       } else if (timeDiff > 300 && timeDiff <= 500) {
         SHOTGUN_SPRITE[2] = 13;
+        if (!gameState.player.shooting.processedHit) {
+          hitPlayer();
+          gameState.player.shooting.processedHit = true;
+        }
       } else if (timeDiff > 500 && timeDiff <= 600) {
         SHOTGUN_SPRITE[2] = 14;
       } else if (timeDiff > 600 && timeDiff <= 800) {
