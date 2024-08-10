@@ -164,6 +164,10 @@ function loadImage(imgPath) {
     loadImage("pics/pillar.png"),
     loadImage("pics/greenlight.png"),
     loadImage("pics/handshotgun1.gif"),
+    loadImage("pics/handshotgun2.gif"),
+    loadImage("pics/handshotgun3.gif"),
+    loadImage("pics/handshotgun4.gif"),
+    loadImage("pics/handshotgun5.gif"),
   ]);
 
   const gameState = {
@@ -172,6 +176,13 @@ function loadImage(imgPath) {
       movingForward: false,
       turningLeft: false,
       turningRight: false,
+      shooting: {
+        keypressed: false,
+        keyraised: true,
+        animationPlaying: false,
+        animationStartTime: 0,
+        animationEndTime: 0,
+      },
     }
   };
 
@@ -195,6 +206,7 @@ function loadImage(imgPath) {
           gameState.player.turningRight = true;
           break;
         case 'Space':
+          gameState.player.shooting.keypressed = true;
           break;
       }
     }
@@ -217,6 +229,10 @@ function loadImage(imgPath) {
         case 'ArrowRight':
         case 'KeyD':
           gameState.player.turningRight = false;
+          break;
+        case 'Space':
+          gameState.player.shooting.keypressed = false;
+          gameState.player.shooting.keyraised = true;
           break;
       }
     }
@@ -614,6 +630,29 @@ function loadImage(imgPath) {
 
       SHOTGUN_SPRITE[0] = posX + dirX;
       SHOTGUN_SPRITE[1] = posY + dirY;
+    }
+
+    //show shooting animation
+    if (gameState.player.shooting.keypressed && gameState.player.shooting.keyraised && !gameState.player.shooting.animationPlaying) {
+      gameState.player.shooting.animationPlaying = true;
+      gameState.player.shooting.animationStartTime = time;
+      gameState.player.shooting.keyraised = false;
+    }
+    if (gameState.player.shooting.animationPlaying) {
+      const timeDiff = time-gameState.player.shooting.animationStartTime;
+      if (timeDiff > 200 && timeDiff <= 300) {
+        SHOTGUN_SPRITE[2] = 12;
+      } else if (timeDiff > 300 && timeDiff <= 500) {
+        SHOTGUN_SPRITE[2] = 13;
+      } else if (timeDiff > 500 && timeDiff <= 600) {
+        SHOTGUN_SPRITE[2] = 14;
+      } else if (timeDiff > 600 && timeDiff <= 800) {
+        SHOTGUN_SPRITE[2] = 15;
+      } else if (timeDiff > 800) {
+        SHOTGUN_SPRITE[2] = 11;
+        gameState.player.shooting.animationPlaying = false;
+        gameState.player.shooting.animationEndTime = time;
+      } 
     }
 
     window.requestAnimationFrame(drawFrame);
