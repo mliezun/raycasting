@@ -5,7 +5,7 @@ var http = require("http"),
     fs = require("fs"),
     path = require("path");
 
-var port = 3456;
+var port = 8032;
 
 var app = http.createServer(function(req, resp){
     // Obtén la ruta del archivo solicitado
@@ -56,7 +56,7 @@ var app = http.createServer(function(req, resp){
 });
 
 app.listen(port, () => {
-    console.log('Server listening on port ' + port);
+    console.log(`Server listening on http://0.0.0.0:${port}`);
 });
 
 var io = new SocketIOServer(app);
