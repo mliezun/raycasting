@@ -239,6 +239,9 @@ function BotsControl(botsState) {
     
     if (i >= 0) {
       players[i] = data;
+      if (data.lives === 0) {
+        players.splice(i, 1);
+      }
     } else if (data.serverSocketId === serverSocketId) {
       lives = data.lives;
     }
@@ -255,7 +258,7 @@ function BotsControl(botsState) {
   socket.on('new_player', (data) => {
     const itsAMeMario = serverSocketId === data.serverSocketId
     
-    if (!itsAMeMario) {
+    if (!itsAMeMario && data.lives > 0) {
       players.push(data)
       spriteOrder = new Uint32Array(sprite.length + botsPos.length + players.length);
       spriteDistance = new Float64Array(sprite.length + botsPos.length + players.length);

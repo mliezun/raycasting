@@ -63,15 +63,15 @@ var io = new SocketIOServer(app);
 var connections = []
 
 io.sockets.on("connection", function(socket) {
-    console.log('Player Conectado: ', socket.id)
+    console.log('Player connected: ', socket.id)
 
 	socket.on('start', (data, callback) => {
         const { posX, posY, dirX, dirY, lives } = data
         const serverSocketId = socket.id
-        const players = connections.map(playerSocker => ({
-            serverSocketId: playerSocker.id,
-            ...playerSocker.data
-        }))
+        const players = connections.map(playerSocket => ({
+            serverSocketId: playerSocket.id,
+            ...playerSocket.data
+        })).filter(player => player.lives > 0);
         
 
         callback({ serverSocketId, players })
@@ -106,9 +106,23 @@ io.sockets.on("connection", function(socket) {
         if (player.lives === 0) {
             player.posX = 0;
             player.posY = 0;
-            io.sockets.emit('player_position_to_client', player);    
+            io.sockets.emit('player_position_to_client', player);
+
+            const ix = connections.findIndex(playerSocket => playerSocket.id === player.serverSocketId)
+            if (ix !== -1) {
+                connections[ix].data = player;
+            }
         } else {
             io.sockets.emit('player_position_to_client', player);
+        }
+    })
+
+    socket.on("disconnect", function (reason) {
+        const ix = connections.findIndex(playerSocket => playerSocket.id === socket.id);
+        if (ix !== -1) {
+            connections.splice(ix, 1);
+            console.log("Player disconnected:", socket.id, reason)
+            io.sockets.emit('player_position_to_client', {serverSocketId: socket.id, posX: 0, posY: 0, dirX: 0, dirY: 0, lives: 0});
         }
     })
 })
