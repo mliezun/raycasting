@@ -65,6 +65,9 @@ const sprite = [
   [9.5, 15.5, 8],
   [10.0, 15.1,8],
   [10.5, 15.8,8],
+
+  //key
+  [19.5, 10.5, 17],
 ];
 
 const SHOTGUN_SPRITE = [21.5, 11.5, 11];
@@ -281,6 +284,8 @@ function BotsControl(botsState) {
     loadImage("pics/handshotgun5.gif"),
     // load bot sprites
     loadImage("pics/bot1.png"),
+    //key
+    loadImage("pics/key.png")
   ]);
 
   const gameState = {
@@ -753,6 +758,20 @@ function BotsControl(botsState) {
 
       socket.emit('player_position_to_server', { serverSocketId, posX, posY, dirX, dirY, lives })
     }
+
+    
+    //key cast
+    for(let i=0;i<sprite.length;i++)
+      {
+        if(Math.abs(posX - sprite[i][0]) < 0.5 && Math.abs(posY - sprite[i][1]) < 0.5 )
+          {
+              if(sprite[i][2] == 17)
+              {
+                sprite.splice(i, 1);
+              }
+          } 
+    }
+
     //move backwards if no wall behind you
     if (gameState.player.movingBackward) {
       const moveX = Math.floor(posX - dirX * moveSpeed)
