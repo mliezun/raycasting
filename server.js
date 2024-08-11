@@ -5,7 +5,7 @@ var http = require("http"),
     fs = require("fs"),
     path = require("path");
 
-var port = 8032;
+var port = process.env.PORT || 8032;
 
 var app = http.createServer(function(req, resp){
     // Obtén la ruta del archivo solicitado
