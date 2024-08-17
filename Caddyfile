@@ -1,12 +1,12 @@
 {
 	http_port {$PORT:8032}
-	https_port 9443
 	auto_https off
-	log {
-		level info
-	}
+	debug
 }
 :{$PORT:8032} raycasting.onrender.com {
+	log {
+		level DEBUG
+	}
 	route * {
 		python {
 			module_asgi "server:app"
