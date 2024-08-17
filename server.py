@@ -5,7 +5,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from engineio.payload import Payload
+import logging
+import sys
 
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stderr,
+)
+logger = logging.getLogger(__name__)
 Payload.max_decode_packets = 1024
 
 # Create a Socket.IO server
@@ -19,7 +28,7 @@ app = FastAPI()
 app.mount("/pics", StaticFiles(directory="pics"), name="pics")
 app.mount("/sounds", StaticFiles(directory="sounds"), name="sounds")
 
-print(app.routes)
+logger.info(app.routes)
 
 # CORS settings
 origins = ["*"]
@@ -38,7 +47,7 @@ connections = []
 async def serve_file(file_path: str):
     if file_path == "":
         file_path = "index.html"
-    print(file_path)
+    logger.info(file_path)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Not found")
     return FileResponse(file_path)
@@ -46,13 +55,13 @@ async def serve_file(file_path: str):
 
 @sio.event
 async def connect(sid, environ):
-    print(f"Player connected: {sid}")
+    logger.info(f"Player connected: {sid}")
 
 
 @sio.event
 async def disconnect(sid):
     connections[:] = [c for c in connections if c["sid"] != sid]
-    print(f"Player disconnected: {sid}")
+    logger.info(f"Player disconnected: {sid}")
     await sio.emit(
         "player_position_to_client",
         {"serverSocketId": sid, "posX": 0, "posY": 0, "dirX": 0, "dirY": 0, "lives": 0},
