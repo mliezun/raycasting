@@ -4,6 +4,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from engineio.payload import Payload
+
+Payload.max_decode_packets = 1024
 
 # Create a Socket.IO server
 sio = socketio.AsyncServer(
