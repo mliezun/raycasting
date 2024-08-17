@@ -7,8 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Create a Socket.IO server
 sio = socketio.AsyncServer(
-    async_mode='asgi',
-    cors_allowed_origins=['http://localhost:8032'],
+    async_mode="asgi",
+    cors_allowed_origins="*",
 )
 app = FastAPI()
 
@@ -30,6 +30,7 @@ app.add_middleware(
 
 connections = []
 
+
 @app.get("/{file_path:path}")
 async def serve_file(file_path: str):
     if file_path == "":
@@ -39,47 +40,53 @@ async def serve_file(file_path: str):
         raise HTTPException(status_code=404, detail="Not found")
     return FileResponse(file_path)
 
+
 @sio.event
 async def connect(sid, environ):
     print(f"Player connected: {sid}")
 
+
 @sio.event
 async def disconnect(sid):
-    connections[:] = [c for c in connections if c['sid'] != sid]
+    connections[:] = [c for c in connections if c["sid"] != sid]
     print(f"Player disconnected: {sid}")
-    await sio.emit('player_position_to_client', {"serverSocketId": sid, "posX": 0, "posY": 0, "dirX": 0, "dirY": 0, "lives": 0})
+    await sio.emit(
+        "player_position_to_client",
+        {"serverSocketId": sid, "posX": 0, "posY": 0, "dirX": 0, "dirY": 0, "lives": 0},
+    )
+
 
 @sio.event
 async def start(sid, data):
     server_socket_id = sid
     players = [
-        {
-            "serverSocketId": player['sid'],
-            **player['data']
-        }
-        for player in connections if player['data']['lives'] > 0
+        {"serverSocketId": player["sid"], **player["data"]}
+        for player in connections
+        if player["data"]["lives"] > 0
     ]
-    
+
     data["serverSocketId"] = server_socket_id
 
-    await sio.emit('new_player', data, skip_sid=sid)
+    await sio.emit("new_player", data, skip_sid=sid)
     connections.append({"sid": sid, "data": data})
     return {"serverSocketId": server_socket_id, "players": players}
+
 
 @sio.event
 async def player_position_to_server(sid, data):
     lives = data["lives"]
 
     for player in connections:
-        if player['sid'] == sid:
-            player['data'] = data
+        if player["sid"] == sid:
+            player["data"] = data
             break
 
     if lives == 0:
         data["posX"] = 0
         data["posY"] = 0
 
-    await sio.emit('player_position_to_client', data)
+    await sio.emit("player_position_to_client", data)
+
 
 @sio.event
 async def shoot_other_player(sid, data):
@@ -88,14 +95,14 @@ async def shoot_other_player(sid, data):
     if player["lives"] == 0:
         player["posX"] = 0
         player["posY"] = 0
-        await sio.emit('player_position_to_client', player)
+        await sio.emit("player_position_to_client", player)
 
         for player_data in connections:
-            if player_data['sid'] == player["serverSocketId"]:
-                player_data['data'] = player
+            if player_data["sid"] == player["serverSocketId"]:
+                player_data["data"] = player
                 break
     else:
-        await sio.emit('player_position_to_client', player)
+        await sio.emit("player_position_to_client", player)
 
 
 app = socketio.ASGIApp(sio, other_asgi_app=app)

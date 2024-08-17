@@ -5,7 +5,7 @@
 		level info
 	}
 }
-localhost:{$PORT:8032} {
+:{$PORT:8032} {
 	route * {
 		python {
 			module_asgi "server:app"
