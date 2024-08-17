@@ -1,0 +1,15 @@
+{
+	http_port 8032
+	https_port 9443
+	log {
+		level info
+	}
+}
+localhost:8032 {
+	route * {
+		python {
+			module_asgi "server:app"
+			venv "./venv"
+		}
+	}
+}

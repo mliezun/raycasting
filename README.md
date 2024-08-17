@@ -15,11 +15,11 @@ This project is a multiplayer first-person shooter game implemented using raycas
 ## Technologies Used
 - JavaScript
 - HTML5 Canvas
-- Node.js
+- FastAPI
 - Socket.io for real-time multiplayer functionality
 
 ## Prerequisites
-- Node.js (latest LTS version recommended)
+- Docker
 
 ## Installation
 1. Clone the repository
@@ -29,13 +29,13 @@ This project is a multiplayer first-person shooter game implemented using raycas
    ```
 2. Install dependencies
    ```
-   yarn install
+   docker build -t raycasting .
    ```
 
 ## How to Run
 1. Start the server:
    ```
-   yarn start
+   docker run --rm raycasting
    ```
 2. Open a web browser and go to `http://localhost:8032`
 3. To play multiplayer, open the game in multiple browser windows or on different computers on the same network
