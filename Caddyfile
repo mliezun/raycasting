@@ -1,12 +1,22 @@
 {
-	http_port {$PORT:8032}
+	servers {
+		protocols h1 h2
+	}
 	auto_https off
+	admin off
 	debug
 }
-:{$PORT:8032} raycasting.onrender.com {
+:{$PORT:8032} {
 	log {
 		level DEBUG
 	}
+	@head {
+		method HEAD
+	}
+	handle @head {
+		respond "" 200
+	}
+
 	route * {
 		python {
 			module_asgi "server:app"
