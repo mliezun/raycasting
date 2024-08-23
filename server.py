@@ -1,9 +1,4 @@
-import os
 import socketio
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.cors import CORSMiddleware
 from engineio.payload import Payload
 import logging
 import sys
@@ -22,35 +17,8 @@ sio = socketio.AsyncServer(
     async_mode="asgi",
     cors_allowed_origins="*",
 )
-app = FastAPI()
-
-# Mount static files
-app.mount("/pics", StaticFiles(directory="pics"), name="pics")
-app.mount("/sounds", StaticFiles(directory="sounds"), name="sounds")
-
-logger.info(app.routes)
-
-# CORS settings
-origins = ["*"]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 connections = []
-
-
-@app.get("/{file_path:path}")
-async def serve_file(file_path: str):
-    if file_path == "":
-        file_path = "index.html"
-    logger.info(file_path)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Not found")
-    return FileResponse(file_path)
 
 
 @sio.event
@@ -117,4 +85,4 @@ async def shoot_other_player(sid, data):
         await sio.emit("player_position_to_client", player)
 
 
-app = socketio.ASGIApp(sio, other_asgi_app=app)
+app = socketio.ASGIApp(sio)

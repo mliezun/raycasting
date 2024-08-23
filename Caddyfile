@@ -10,14 +10,12 @@
 	log {
 		level DEBUG
 	}
-	@head {
-		method HEAD
-	}
-	handle @head {
-		respond "" 200
+
+	file_server {
+		hide server.py Caddyfile Dockerfile README.md LICENSE requirements.txt .gitignore .dockerignore venv __pycache__
 	}
 
-	route * {
+	route /socket.io/* {
 		python {
 			module_asgi "server:app"
 			venv "./venv"
